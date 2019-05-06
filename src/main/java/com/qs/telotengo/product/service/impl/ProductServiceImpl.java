@@ -163,10 +163,10 @@ public class ProductServiceImpl implements ProductService {
 		}
 		if (elimino) {
 			dao.save(product.get());
-			LOGGER.info("Eliminando Gallery id: " + idPhoto);
+			LOGGER.info("Eliminando foto id: " + idPhoto);
 			return elimino;
 		} else {
-			throw new ValidationExceptions("0101", "No se pudo eliminar la direccion No existe id: " + idPhoto,
+			throw new ValidationExceptions("0101", "No se pudo eliminar la foto No existe id: " + idPhoto,
 					HttpStatus.OK);
 		}
 	}
@@ -264,15 +264,12 @@ public class ProductServiceImpl implements ProductService {
 			LOGGER.info("BulidEntityGallery: " + e.getMessage());
 		}
 		return null;
-
 	}
 
 	public PhotoResponse buildResponseGallery(Photo gallery) {
 		try {
 			return mapper.map(gallery, PhotoResponse.class);
-
 		} catch (RuntimeException e) {
-
 			LOGGER.info("BulidResponseGallery" + e.getCause());
 		}
 		return null;

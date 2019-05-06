@@ -87,7 +87,7 @@ public class ProductController {
 	}
 
 	// Cambiar a Gallery principal
-	@GetMapping("/edit/address/setprimary/{id}")
+	@GetMapping("/edit/photo/setprimary/{id}")
 	public HttpEntity<PhotoResponse> setToAddressPrimary(@PathVariable("id") String idAPhoto)
 			throws ValidationExceptions {
 		return new ResponseEntity<PhotoResponse>(productService.setToPhotoPrimary(idAPhoto), HttpStatus.OK);
