@@ -10,9 +10,11 @@ import com.qs.telotengo.product.dao.Product;
 
 @Repository
 public interface ProductRepository extends MongoRepository<Product, String> {
-	
+	//Todos los productos que coincidan de un store	
 	Iterable<Product> findByNameContainingIgnoreCaseOrTagContainingIgnoreCaseAndStatusIsTrueAndGalleryStatusIsTrue(String name, String tag);
+	//Todos los productos de un store
 	Iterable<Product> findByIdstoreAndStatusIsTrue(String idStore);
+	//buscar producto por id
 	Optional<Product> findByIdAndStatusIsTrue(String id);
 
 	//Gallery method

@@ -1,23 +1,20 @@
 package com.qs.telotengo.product.dto;
 
-import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.List;
 
-import javax.validation.constraints.Email;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.annotation.Id;
 
 import com.qs.telotengo.product.dao.Photo;
-import com.qs.telotengo.product.dao.Product;
 
 public class ProductRequest {
 
 	private String id;
 	@NotNull
-	private String idStore;
+	private String idstore;
 	@NotNull
 	private String name;
 
@@ -31,7 +28,8 @@ public class ProductRequest {
 	@NotNull
 	private String type;
 	@NotNull
-	private Time timePreparation;
+	@Min(value=0, message="No puede ser menor que 0")
+	private int timepreparation;
 	private List<Photo> gallery;
 	private boolean status;
 	
@@ -41,11 +39,11 @@ public class ProductRequest {
 	public void setId(String id) {
 		this.id = id;
 	}
-	public String getIdStore() {
-		return idStore;
+	public String getIdstore() {
+		return idstore;
 	}
-	public void setIdStore(String idStore) {
-		this.idStore = idStore;
+	public void setIdstore(String idstore) {
+		this.idstore = idstore;
 	}
 	public String getName() {
 		return name;
@@ -83,11 +81,11 @@ public class ProductRequest {
 	public void setType(String type) {
 		this.type = type;
 	}
-	public Time getTimePreparation() {
-		return timePreparation;
+	public int getTimePreparation() {
+		return timepreparation;
 	}
-	public void setTimePreparation(Time timePreparation) {
-		this.timePreparation = timePreparation;
+	public void setTimePreparation(int timepreparation) {
+		this.timepreparation = timepreparation;
 	}
 	public List<Photo> getGallery() {
 		return gallery;
@@ -103,8 +101,8 @@ public class ProductRequest {
 	}
 	@Override
 	public String toString() {
-		return "Product [id=" + id + ", idStore=" + idStore + ", name=" + name + ", tag=" + tag + ", details=" + details
+		return "Product [id=" + id + ", idstore=" + idstore + ", name=" + name + ", tag=" + tag + ", details=" + details
 				+ ", createDate=" + createDate + ", userCreate=" + userCreate + ", type=" + type + ", timePreparation="
-				+ timePreparation + ", gallery=" + gallery + ", status=" + status + "]";
+				+ timepreparation + ", gallery=" + gallery + ", status=" + status + "]";
 	}
 }

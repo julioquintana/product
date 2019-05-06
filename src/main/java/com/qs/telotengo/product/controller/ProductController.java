@@ -2,7 +2,6 @@ package com.qs.telotengo.product.controller;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import javax.validation.Valid;
@@ -53,7 +52,7 @@ public class ProductController {
 				HttpStatus.OK);
 	}
 
-	@GetMapping("/list/{idStore}")
+	@GetMapping("/list/store/{idStore}")
 	public HttpEntity<List<ProductResponse>> getAllProductOfStore(@PathVariable("idStore") String idStore)
 			throws ValidationExceptions {
 		return new ResponseEntity<List<ProductResponse>>(productService.getAllProductOfStore(idStore), HttpStatus.OK);
@@ -64,15 +63,15 @@ public class ProductController {
 		return new ResponseEntity<ProductResponse>(productService.deleteProduct(id), HttpStatus.OK);
 	}
 
-	// request de Adresses
+	// EndPoint de Gallery
 
-	// todas las direcciones de un usuario
+	// todas las Gallery de un usuario
 	@GetMapping("/list/gallery/{id}")
 	public HttpEntity<List<Photo>> getAllPhoto(@PathVariable("id") String pais) throws ValidationExceptions {
 		return new ResponseEntity<List<Photo>>(productService.getAllPhoto(pais), HttpStatus.OK);
 	}
 
-	// guardar direccion de un usuario
+	// guardar Gallery de un usuario
 	@PostMapping("/save/gallery/{id}")
 	public HttpEntity<List<PhotoResponse>> saveAddresses(@Valid @RequestBody List<PhotoRequest> photoRequest,
 			@PathVariable("id") String id) throws ValidationExceptions {
@@ -80,18 +79,18 @@ public class ProductController {
 		return new ResponseEntity<List<PhotoResponse>>(productService.savePhotos(photoRequest, id), HttpStatus.OK);
 	}
 
-	// borrar direccion
+	// borrar Gallery
 	@PutMapping("/delete/photo/{id}")
 	public HttpEntity<PhotoResponse> deleteAddresses(@PathVariable("id") String idPhoto) throws ValidationExceptions {
 		productService.deletePhoto(idPhoto);
 		return new ResponseEntity<PhotoResponse>(HttpStatus.OK);
 	}
 
-	// Cambiar a direccion principal
+	// Cambiar a Gallery principal
 	@GetMapping("/edit/address/setprimary/{id}")
-	public HttpEntity<PhotoResponse> setToAddressPrimary(@PathVariable("id") String idAddress)
+	public HttpEntity<PhotoResponse> setToAddressPrimary(@PathVariable("id") String idAPhoto)
 			throws ValidationExceptions {
-		return new ResponseEntity<PhotoResponse>(usuariosService.setToAddressPrimary(idAddress), HttpStatus.OK);
+		return new ResponseEntity<PhotoResponse>(productService.setToPhotoPrimary(idAPhoto), HttpStatus.OK);
 	}
 
 	private void validateCreateRequestPhoto(List<PhotoRequest> request) throws ValidationExceptions {
@@ -105,7 +104,7 @@ public class ProductController {
 
 	private void validateCreateRequest(ProductRequest request) throws ValidationExceptions {
 
-		if (Stream.of(request.getName(), request.getRut()).anyMatch(Objects::isNull)) {
+		if (Stream.of(request.getName(), request.getIdstore(), request.getType()).anyMatch(Objects::isNull)) {
 			throw new ValidationExceptions("4050", "El request no debe tener datos nulos", HttpStatus.BAD_REQUEST);
 		}
 		// if(!isNumeric(request.getPhone()) ||

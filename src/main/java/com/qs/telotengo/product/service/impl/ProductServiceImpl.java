@@ -1,5 +1,6 @@
 package com.qs.telotengo.product.service.impl;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -8,17 +9,13 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import org.apache.commons.collections4.IterableUtils;
 import org.bson.types.ObjectId;
 import org.dozer.Mapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.util.NullableUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import com.mongodb.lang.Nullable;
 import com.qs.telotengo.product.dao.Photo;
 import com.qs.telotengo.product.dao.Product;
 import com.qs.telotengo.product.dao.repository.ProductRepository;
@@ -53,6 +50,8 @@ public class ProductServiceImpl implements ProductService {
 		// guardando
 		if (Objects.isNull(productRequest.getId()) && !productExist.isPresent()) {
 			productRequest.setStatus(true);
+			productRequest.setCreateDate(new Timestamp(System.currentTimeMillis()));
+			
 			if (!Objects.isNull(productRequest.getGallery())) {
 				productRequest.setGallery(setIdToPhotos(productRequest.getGallery()));
 			}
@@ -63,7 +62,7 @@ public class ProductServiceImpl implements ProductService {
 			productExist = dao.findByIdAndStatusIsTrue(productRequest.getId());
 			if (productExist.isPresent()) {
 				productRequest.setGallery(productExist.get().getGallery());
-				productRequest.setIdStore(productExist.get().getIdStore());
+				productRequest.setIdstore(productExist.get().getIdstore());
 				productRequest.setCreateDate(productExist.get().getCreateDate());
 				productRequest.setUserCreate(productExist.get().getUserCreate());
 				productRequest.setStatus(true);
@@ -199,7 +198,7 @@ public class ProductServiceImpl implements ProductService {
 		return lista;
 	}
 	public boolean isValidType(String tipo) throws ValidationExceptions {
-		return Arrays.stream(ProductType.values()).filter(e -> e.equals(tipo.toUpperCase())).findFirst().isPresent();
+		return !Arrays.stream(ProductType.values()).filter(e -> e.equals(tipo.toUpperCase())).findFirst().isPresent();
 	}
 
 	private Optional<Product> AddPhotoInUser(Optional<Product> product, List<Photo> listPhoto) {

@@ -1,5 +1,4 @@
 package com.qs.telotengo.product.dto;
-import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -9,14 +8,14 @@ import com.qs.telotengo.product.dao.Product;
 public class ProductResponse {
 	
 	private String id;
-	private String idStore;
+	private String idstore;
 	private String name;
 	private String tag;
 	private String details;
 	private Timestamp createDate;
 	private String userCreate;
 	private String type;
-	private Time timePreparation;
+	private int timePreparation;
 	private List<Photo> gallery;
 	private boolean status;
 	public String getId() {
@@ -25,11 +24,11 @@ public class ProductResponse {
 	public void setId(String id) {
 		this.id = id;
 	}
-	public String getIdStore() {
-		return idStore;
+	public String getIdstore() {
+		return idstore;
 	}
-	public void setIdStore(String idStore) {
-		this.idStore = idStore;
+	public void setIdstore(String idstore) {
+		this.idstore = idstore;
 	}
 	public String getName() {
 		return name;
@@ -67,10 +66,10 @@ public class ProductResponse {
 	public void setType(String type) {
 		this.type = type;
 	}
-	public Time getTimePreparation() {
+	public int getTimePreparation() {
 		return timePreparation;
 	}
-	public void setTimePreparation(Time timePreparation) {
+	public void setTimePreparation(int timePreparation) {
 		this.timePreparation = timePreparation;
 	}
 	public List<Photo> getGallery() {
@@ -90,26 +89,22 @@ public class ProductResponse {
 	public ProductResponse(Product product) {
 		super();
 		this.id =  product.getId();
-		this.idStore = product.getIdStore();
+		this.idstore = product.getIdstore();
 		this.name = product.getName();
 		this.tag = product.getTag();
 		this.details = product.getDetails();
 		this.createDate = product.getCreateDate();
 		this.userCreate = product.getUserCreate();
 		this.type = product.getType();
-		this.timePreparation = product.getTimePreparation();
+		this.timePreparation = product.gettimepreparation();
 		this.gallery = product.getGallery();
 		this.status = product.isStatus();
 	}
 	
 	@Override
 	public String toString() {
-		return "Product [id=" + id + ", idStore=" + idStore + ", name=" + name + ", tag=" + tag + ", details=" + details
+		return "Product [id=" + id + ", idstore=" + idstore + ", name=" + name + ", tag=" + tag + ", details=" + details
 				+ ", createDate=" + createDate + ", userCreate=" + userCreate + ", type=" + type + ", timePreparation="
 				+ timePreparation + ", gallery=" + gallery + ", status=" + status + "]";
 	}
-
-
-
-	
 }

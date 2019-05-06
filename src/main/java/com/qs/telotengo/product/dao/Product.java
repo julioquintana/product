@@ -5,7 +5,9 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.List;
 
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -18,7 +20,7 @@ public class Product implements Serializable {
 	@Id
 	private String id;
 	@NotNull
-	private String idStore;
+	private String idstore;
 	@NotNull
 	private String name;
 	@NotNull
@@ -32,20 +34,22 @@ public class Product implements Serializable {
 	@NotNull
 	private String type;
 	@NotNull
-	private Time timePreparation;
+	@Min(value=0, message="No puede ser menor que 0")
+	private int timepreparation;
 	private List<Photo> gallery;
 	private boolean status;
+	
 	public String getId() {
 		return id;
 	}
 	public void setId(String id) {
 		this.id = id;
 	}
-	public String getIdStore() {
-		return idStore;
+	public String getIdstore() {
+		return idstore;
 	}
-	public void setIdStore(String idStore) {
-		this.idStore = idStore;
+	public void setIdstore(String idStore) {
+		this.idstore = idStore;
 	}
 	public String getName() {
 		return name;
@@ -83,11 +87,11 @@ public class Product implements Serializable {
 	public void setType(String type) {
 		this.type = type;
 	}
-	public Time getTimePreparation() {
-		return timePreparation;
+	public int gettimepreparation() {
+		return timepreparation;
 	}
-	public void setTimePreparation(Time timePreparation) {
-		this.timePreparation = timePreparation;
+	public void settimepreparation(int  timepreparation) {
+		this.timepreparation = timepreparation;
 	}
 	public List<Photo> getGallery() {
 		return gallery;
@@ -103,27 +107,27 @@ public class Product implements Serializable {
 	}
 	public Product() {
 	}
-	public Product(String id, @NotNull String idStore, @NotNull String name, @NotNull String tag,
+	public Product(String id, @NotNull String idstore, @NotNull String name, @NotNull String tag,
 			@NotNull String details, @NotNull Timestamp createDate, @NotNull String userCreate, @NotNull String type,
-			@NotNull Time timePreparation, List<Photo> gallery, boolean status) {
+			@NotNull int timepreparation, List<Photo> gallery, boolean status) {
 		super();
 		this.id = id;
-		this.idStore = idStore;
+		this.idstore = idstore;
 		this.name = name;
 		this.tag = tag;
 		this.details = details;
 		this.createDate = createDate;
 		this.userCreate = userCreate;
 		this.type = type;
-		this.timePreparation = timePreparation;
+		this.timepreparation = timepreparation;
 		this.gallery = gallery;
 		this.status = status;
 	}
 	@Override
 	public String toString() {
-		return "Product [id=" + id + ", idStore=" + idStore + ", name=" + name + ", tag=" + tag + ", details=" + details
-				+ ", createDate=" + createDate + ", userCreate=" + userCreate + ", type=" + type + ", timePreparation="
-				+ timePreparation + ", gallery=" + gallery + ", status=" + status + "]";
+		return "Product [id=" + id + ", idstore=" + idstore + ", name=" + name + ", tag=" + tag + ", details=" + details
+				+ ", createDate=" + createDate + ", userCreate=" + userCreate + ", type=" + type + ", timepreparation="
+				+ timepreparation + ", gallery=" + gallery + ", status=" + status + "]";
 	}
 
 	
