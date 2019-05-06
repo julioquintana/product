@@ -1,5 +1,5 @@
 package com.qs.telotengo.product.dto;
-import java.sql.Timestamp;
+import java.util.Date;
 import java.util.List;
 
 import com.qs.telotengo.product.dao.Photo;
@@ -12,7 +12,7 @@ public class ProductResponse {
 	private String name;
 	private String tag;
 	private String details;
-	private Timestamp createDate;
+	private Date createDate;
 	private String userCreate;
 	private String type;
 	private int timePreparation;
@@ -48,10 +48,10 @@ public class ProductResponse {
 	public void setDetails(String details) {
 		this.details = details;
 	}
-	public Timestamp getCreateDate() {
+	public Date getCreateDate() {
 		return createDate;
 	}
-	public void setCreateDate(Timestamp createDate) {
+	public void setCreateDate(Date createDate) {
 		this.createDate = createDate;
 	}
 	public String getUserCreate() {

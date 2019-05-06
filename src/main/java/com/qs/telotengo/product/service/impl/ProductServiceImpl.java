@@ -1,8 +1,9 @@
 package com.qs.telotengo.product.service.impl;
 
-import java.sql.Timestamp;
+
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -50,10 +51,12 @@ public class ProductServiceImpl implements ProductService {
 		// guardando
 		if (Objects.isNull(productRequest.getId()) && !productExist.isPresent()) {
 			productRequest.setStatus(true);
-			productRequest.setCreateDate(new Timestamp(System.currentTimeMillis()));
+		    Date date = new Date();
+			productRequest.setCreateDate(date);
 			
 			if (!Objects.isNull(productRequest.getGallery())) {
 				productRequest.setGallery(setIdToPhotos(productRequest.getGallery()));
+				productRequest.getGallery().get(0).setPrimary(true);
 			}
 			product = dao.save(buildEntity(productRequest));
 			LOGGER.info("save product: " + product);
@@ -208,6 +211,11 @@ public class ProductServiceImpl implements ProductService {
 		}
 		
 		myGallery.addAll(setIdToPhotos(listPhoto));
+
+		if (Objects.isNull(product.get().getGallery())) {
+			myGallery.get(0).setPrimary(true);
+		}
+		
 		product.get().setGallery(myGallery);
 		return product;
 	}

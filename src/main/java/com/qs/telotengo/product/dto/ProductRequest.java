@@ -1,11 +1,10 @@
 package com.qs.telotengo.product.dto;
 
-import java.sql.Timestamp;
+import java.util.Date;
 import java.util.List;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 
 
 import com.qs.telotengo.product.dao.Photo;
@@ -22,7 +21,7 @@ public class ProductRequest {
 	@NotNull
 	private String details;
 	
-	private Timestamp createDate;
+	private Date createDate;
 	@NotNull
 	private String userCreate;
 	@NotNull
@@ -63,10 +62,10 @@ public class ProductRequest {
 	public void setDetails(String details) {
 		this.details = details;
 	}
-	public Timestamp getCreateDate() {
+	public Date getCreateDate() {
 		return createDate;
 	}
-	public void setCreateDate(Timestamp createDate) {
+	public void setCreateDate(Date createDate) {
 		this.createDate = createDate;
 	}
 	public String getUserCreate() {

@@ -1,13 +1,11 @@
 package com.qs.telotengo.product.dao;
 
 import java.io.Serializable;
-import java.sql.Time;
-import java.sql.Timestamp;
+import java.util.Date;
 import java.util.List;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -28,7 +26,7 @@ public class Product implements Serializable {
 	@NotNull
 	private String details;
 	@NotNull
-	private Timestamp createDate;
+	private Date createDate;
 	@NotNull
 	private String userCreate;
 	@NotNull
@@ -69,10 +67,10 @@ public class Product implements Serializable {
 	public void setDetails(String details) {
 		this.details = details;
 	}
-	public Timestamp getCreateDate() {
+	public Date getCreateDate() {
 		return createDate;
 	}
-	public void setCreateDate(Timestamp createDate) {
+	public void setCreateDate(Date createDate) {
 		this.createDate = createDate;
 	}
 	public String getUserCreate() {
@@ -108,7 +106,7 @@ public class Product implements Serializable {
 	public Product() {
 	}
 	public Product(String id, @NotNull String idstore, @NotNull String name, @NotNull String tag,
-			@NotNull String details, @NotNull Timestamp createDate, @NotNull String userCreate, @NotNull String type,
+			@NotNull String details, @NotNull Date createDate, @NotNull String userCreate, @NotNull String type,
 			@NotNull int timepreparation, List<Photo> gallery, boolean status) {
 		super();
 		this.id = id;
