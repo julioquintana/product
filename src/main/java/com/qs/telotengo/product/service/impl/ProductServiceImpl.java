@@ -14,6 +14,7 @@ import org.apache.commons.collections4.IterableUtils;
 import org.bson.types.ObjectId;
 import org.dozer.Mapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +28,7 @@ import com.qs.telotengo.product.dto.ProductResponse;
 import com.qs.telotengo.product.dto.util.ProductType;
 import com.qs.telotengo.product.exception.ValidationExceptions;
 import com.qs.telotengo.product.service.ProductService;
+import com.qs.telotengo.product.util.Constantes;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -42,7 +44,9 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public ProductResponse saveProduct(ProductRequest productRequest) throws ValidationExceptions {
 		if (!isValidType(productRequest.getType())) {
-			throw new ValidationExceptions("0108", "Tipo no valido: " + productRequest.getType().toUpperCase(),
+			throw new ValidationExceptions(
+					Constantes.ERROR_TYPE_PRODUCT_NO_VALID_CODE, 
+					Constantes.ERROR_TYPE_PRODUCT_NO_VALID_TEXT +" :" +productRequest.getType().toUpperCase(),
 					HttpStatus.OK);
 		}
 
@@ -72,8 +76,9 @@ public class ProductServiceImpl implements ProductService {
 				LOGGER.info("update product " + productExist.get());
 				product = dao.save(buildEntity(productRequest));
 			} else {
-				throw new ValidationExceptions("0108",
-						"No se puede modificar, No existe una cuenta de product para este id, Id: "
+				throw new ValidationExceptions(
+						Constantes.ERROR_NOT_UPDATE_PRODUCT_NOT_EXIST_CODE,
+						Constantes.ERROR_NOT_UPDATE_PRODUCT_NOT_EXIST_TEXT
 								+ productRequest.getId(),
 						HttpStatus.OK);
 			}
@@ -87,27 +92,38 @@ public class ProductServiceImpl implements ProductService {
 		LOGGER.info("Message: getProduct: " + product.toString());
 
 		ProductResponse uResponse = buildResponse(dao.findByIdAndStatusIsTrue(id).orElseThrow(
-				() -> new ValidationExceptions("0101", "No existe product con este id: " + id, HttpStatus.OK)));
+				() -> new ValidationExceptions(
+						Constantes.ERROR_PRODUCT_NOT_EXIST_CODE,
+						Constantes.ERROR_PRODUCT_NOT_EXIST_TEXT + id,
+						HttpStatus.OK)));
 		return uResponse;
 	}
 
 	// busqueda producto
 	@Override
-	public List<ProductResponse> getAllProductCoincidencia(String coincidencia) throws ValidationExceptions {
-		Iterable<Product> productList = dao
+	public List<ProductResponse> getAllProductCoincidencia(String coincidencia,int page, int numberOfItem) throws ValidationExceptions {
+		PageRequest pageable = PageRequest.of(page,numberOfItem);
+		List<Product> productList =  dao
 				.findByNameContainingIgnoreCaseOrTagContainingIgnoreCaseAndStatusIsTrueAndGalleryStatusIsTrue(
-						coincidencia, coincidencia);
+						coincidencia, coincidencia,pageable).getContent();
 		if (IterableUtils.isEmpty(productList)) {
-			throw new ValidationExceptions("4030", "La lista de products esta vacia", HttpStatus.OK);
+			throw new ValidationExceptions(
+					Constantes.ERROR_EMPTY_PRODUCT_LIST_CODE,
+					Constantes.ERROR_EMPTY_PRODUCT_LIST_TEXT,
+					HttpStatus.OK);
 		}
 		return buildResponseList(productList);
 	}
 
 	@Override
-	public List<ProductResponse> getAllProductOfStore(String idStore) throws ValidationExceptions {
-		Iterable<Product> productList = dao.findByIdstoreAndStatusIsTrue(idStore);
+	public List<ProductResponse> getAllProductOfStore(String idStore,int page, int numberOfItem) throws ValidationExceptions {
+		PageRequest pageable = PageRequest.of(page,numberOfItem);
+		List<Product> productList = dao.findByIdstoreAndStatusIsTrue(idStore, pageable).getContent();
 		if (IterableUtils.isEmpty(productList)) {
-			throw new ValidationExceptions("4030", "La lista de products esta vacia", HttpStatus.OK);
+			throw new ValidationExceptions(
+					Constantes.ERROR_EMPTY_PRODUCT_LIST_CODE,
+					Constantes.ERROR_EMPTY_PRODUCT_LIST_TEXT,
+					HttpStatus.OK);
 		}
 		return buildResponseList(productList);
 	}
@@ -116,26 +132,35 @@ public class ProductServiceImpl implements ProductService {
 	public ProductResponse deleteProduct(String id) throws ValidationExceptions {
 		Optional<Product> productDel = dao.findByIdAndStatusIsTrue(id);
 		if (!productDel.isPresent()) {
-			throw new ValidationExceptions("4031", "No existe product con este id: " + id, HttpStatus.OK);
+			throw new ValidationExceptions(
+					Constantes.ERROR_PRODUCT_NOT_EXIST_CODE,
+					Constantes.ERROR_PRODUCT_NOT_EXIST_TEXT + id,
+					HttpStatus.OK);
 		}
 		Product product = productDel.get();
 		product.setStatus(false);
 		return buildResponse(dao.save(product));
 	}
-	// |||||||||||||||||||||||||||||||||||||||||||||||||||||||
-	// |||||||||||||||GALLERY METHOD||||||||||||||||||||||||||
-	// |||||||||||||||||||||||||||||||||||||||||||||||||||||||
+	// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+	// |||||||||||||||||||||GALLERY METHOD||||||||||||||||||||||||||
+	// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 	@Override
 	public List<Photo> getAllPhoto(String idProduct) throws ValidationExceptions {
 		Optional<Product> uResponse = dao.findGalleryByIdAndStatusIsTrue(idProduct);
 		if (!uResponse.isPresent()) {
-			throw new ValidationExceptions("0101", "No exise product con este id: " + idProduct, HttpStatus.OK);
+			throw new ValidationExceptions(
+					Constantes.ERROR_PRODUCT_NOT_EXIST_CODE,
+					Constantes.ERROR_PRODUCT_NOT_EXIST_TEXT +" :" + idProduct,
+					HttpStatus.OK);
 		} else {
 			if (!Objects.isNull(uResponse.get().getGallery())) {
 				return uResponse.get().getGallery();
 			} else {
-				throw new ValidationExceptions("0101", "Este product no tienes photos registradas", HttpStatus.OK);
+				throw new ValidationExceptions(
+						Constantes.ERROR_EMPTY_PHOTOS_LIST_CODE, 
+						Constantes.ERROR_EMPTY_PHOTOS_LIST_TEXT,
+						HttpStatus.OK);
 			}
 		}
 	}
@@ -150,7 +175,10 @@ public class ProductServiceImpl implements ProductService {
 		//buildPhotosListResponse
 		return  buildPhotosListResponse(dao.save(AddPhotoInUser(product, buildPhotosListEntity(photoList)).get()).getGallery());
 		} else {
-			throw new ValidationExceptions("0101", "No se puese agregar fotos, no existen productos con este id: " + id, HttpStatus.OK);
+			throw new ValidationExceptions(
+					Constantes.ERROR_NOT_ADD_PHOTOS_PRODUCT_NOT_EXIST_CODE, 
+					Constantes.ERROR_NOT_ADD_PHOTOS_PRODUCT_NOT_EXIST_TEXT +" :"+ id,
+					HttpStatus.OK);
 		}
 	}
 
@@ -166,7 +194,9 @@ public class ProductServiceImpl implements ProductService {
 			LOGGER.info("Eliminando foto id: " + idPhoto);
 			return elimino;
 		} else {
-			throw new ValidationExceptions("0101", "No se pudo eliminar la foto No existe id: " + idPhoto,
+			throw new ValidationExceptions(
+					Constantes.ERROR_NOT_DELETE_PHOTOS_PRODUCT_NOT_EXIST_CODE, 
+					Constantes.ERROR_NOT_DELETE_PHOTOS_PRODUCT_NOT_EXIST_TEXT +" :"+ idPhoto,
 					HttpStatus.OK);
 		}
 	}
@@ -188,7 +218,9 @@ public class ProductServiceImpl implements ProductService {
 			LOGGER.info("Se cambio esta foto a principal: " + gallery);
 			return buildResponseGallery(gallery);
 		} else {
-			throw new ValidationExceptions("0101", "No se pudo cambiar la foto no existe id: " + idPhoto,
+			throw new ValidationExceptions(
+					Constantes.ERROR_NOT_UPDATE_PHOTOS_PRODUCT_NOT_EXIST_CODE, 
+					Constantes.ERROR_NOT_UPDATE_PHOTOS_PRODUCT_NOT_EXIST_TEXT +" :"+ idPhoto,
 					HttpStatus.OK);
 		}
 	}

@@ -25,6 +25,7 @@ import com.qs.telotengo.product.dto.ProductRequest;
 import com.qs.telotengo.product.dto.ProductResponse;
 import com.qs.telotengo.product.exception.ValidationExceptions;
 import com.qs.telotengo.product.service.ProductService;
+import com.qs.telotengo.product.util.Constantes;
 
 @RestController
 @RequestMapping("/product-service/v1/")
@@ -45,17 +46,19 @@ public class ProductController {
 		return new ResponseEntity<ProductResponse>(productService.getProduct(id), HttpStatus.OK);
 	}
 
-	@GetMapping("/list/{coincidencia}")
+	@GetMapping("/list/{coincidencia}/{page}/{nroitem}")
 	public HttpEntity<List<ProductResponse>> getAllProductCoincidencia(
-			@PathVariable("coincidencia") String coincidencia) throws ValidationExceptions {
-		return new ResponseEntity<List<ProductResponse>>(productService.getAllProductCoincidencia(coincidencia),
+			@PathVariable("coincidencia") String coincidencia, @PathVariable("page") int page, @PathVariable("nroitem") int nroitem ) throws ValidationExceptions {
+		return new ResponseEntity<List<ProductResponse>>(productService.getAllProductCoincidencia(coincidencia, page,nroitem),
 				HttpStatus.OK);
 	}
 
-	@GetMapping("/list/store/{idStore}")
-	public HttpEntity<List<ProductResponse>> getAllProductOfStore(@PathVariable("idStore") String idStore)
+	@GetMapping("/list/store/{idStore}/{page}/{nroitem}")
+	public HttpEntity<List<ProductResponse>> getAllProductOfStore(@PathVariable("idStore") String idStore
+			, @PathVariable("page") int page, @PathVariable("nroitem") int nroitem )
 			throws ValidationExceptions {
-		return new ResponseEntity<List<ProductResponse>>(productService.getAllProductOfStore(idStore), HttpStatus.OK);
+		return new ResponseEntity<List<ProductResponse>>(productService.getAllProductOfStore(idStore, page,nroitem),
+				HttpStatus.OK);
 	}
 
 	@PutMapping("/delete/{id}")
@@ -73,7 +76,7 @@ public class ProductController {
 
 	// guardar Gallery de un usuario
 	@PostMapping("/save/gallery/{id}")
-	public HttpEntity<List<PhotoResponse>> saveAddresses(@Valid @RequestBody List<PhotoRequest> photoRequest,
+	public HttpEntity<List<PhotoResponse>> saveGallery(@Valid @RequestBody List<PhotoRequest> photoRequest,
 			@PathVariable("id") String id) throws ValidationExceptions {
 		validateCreateRequestPhoto(photoRequest);
 		return new ResponseEntity<List<PhotoResponse>>(productService.savePhotos(photoRequest, id), HttpStatus.OK);
@@ -81,14 +84,14 @@ public class ProductController {
 
 	// borrar Gallery
 	@PutMapping("/delete/photo/{id}")
-	public HttpEntity<PhotoResponse> deleteAddresses(@PathVariable("id") String idPhoto) throws ValidationExceptions {
+	public HttpEntity<PhotoResponse> deletePhoto(@PathVariable("id") String idPhoto) throws ValidationExceptions {
 		productService.deletePhoto(idPhoto);
 		return new ResponseEntity<PhotoResponse>(HttpStatus.OK);
 	}
 
 	// Cambiar a Gallery principal
 	@GetMapping("/edit/photo/setprimary/{id}")
-	public HttpEntity<PhotoResponse> setToAddressPrimary(@PathVariable("id") String idAPhoto)
+	public HttpEntity<PhotoResponse> setToPhotoPrimary(@PathVariable("id") String idAPhoto)
 			throws ValidationExceptions {
 		return new ResponseEntity<PhotoResponse>(productService.setToPhotoPrimary(idAPhoto), HttpStatus.OK);
 	}
@@ -97,7 +100,10 @@ public class ProductController {
 
 		for (int i = 0; i < request.size(); i++) {
 			if (Stream.of(request.get(i).getName()).anyMatch(Objects::isNull)) {
-				throw new ValidationExceptions("4050", "Las imagenes no deben tener nombre vacio", HttpStatus.BAD_REQUEST);
+				throw new ValidationExceptions(
+						Constantes.ERROR_IMAGE_NAME_NULL_CODE,
+						Constantes.ERROR_IMAGE_NAME_NULL_TEXT,
+						HttpStatus.BAD_REQUEST);
 			}
 		}
 	}
@@ -105,16 +111,10 @@ public class ProductController {
 	private void validateCreateRequest(ProductRequest request) throws ValidationExceptions {
 
 		if (Stream.of(request.getName(), request.getIdstore(), request.getType()).anyMatch(Objects::isNull)) {
-			throw new ValidationExceptions("4050", "El request no debe tener datos nulos", HttpStatus.BAD_REQUEST);
+			throw new ValidationExceptions(
+					Constantes.ERROR_REQUEST_NULL_DATA_CODE,
+					Constantes.ERROR_REQUEST_NULL_DATA_TEXT,
+					HttpStatus.BAD_REQUEST);
 		}
-		// if(!isNumeric(request.getPhone()) ||
-		// !cantidadDigitosValidos(request.getPhone()) ){
-		// throw new ValidationExceptions("1515", "No es un numero de telefono valido",
-		// HttpStatus.BAD_REQUEST);
-		// }
-
-		// && (request.getPhone().length() > 8 && request.getPhone().length() < 14)
-		// && !(request.getPhone().isEmpty())
-
 	}
 }

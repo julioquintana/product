@@ -12,8 +12,8 @@ import com.qs.telotengo.product.exception.ValidationExceptions;
 public interface ProductService {
 	ProductResponse saveProduct(ProductRequest productRequest) throws ValidationExceptions;
 	ProductResponse getProduct(String id) throws ValidationExceptions;
-	List<ProductResponse> getAllProductCoincidencia(String coincidencia) throws ValidationExceptions;
-	List<ProductResponse> getAllProductOfStore(String idStore) throws ValidationExceptions;
+	List<ProductResponse> getAllProductCoincidencia(String coincidencia, int page, int numberOfItem) throws ValidationExceptions;
+	List<ProductResponse> getAllProductOfStore(String idStore, int page, int numberOfItem)throws ValidationExceptions;
 	ProductResponse deleteProduct(String id) throws ValidationExceptions; //softDelete
 	
 	List<Photo> getAllPhoto(String idProduct) throws ValidationExceptions;
