@@ -3,11 +3,9 @@ package com.qs.telotengo.product.dto;
 import java.util.Date;
 import java.util.List;
 
-import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
-
-import com.qs.telotengo.product.dao.Photo;
+import com.qs.telotengo.product.dao.Variant;
 
 public class ProductRequest {
 
@@ -26,12 +24,9 @@ public class ProductRequest {
 	private String userCreate;
 	@NotNull
 	private String type;
-	@NotNull
-	@Min(value=0, message="No puede ser menor que 0")
-	private int timepreparation;
-	private List<Photo> gallery;
+	private int delayTime;
+	private List<Variant> variants;
 	private boolean status;
-	
 	public String getId() {
 		return id;
 	}
@@ -80,17 +75,17 @@ public class ProductRequest {
 	public void setType(String type) {
 		this.type = type;
 	}
-	public int getTimePreparation() {
-		return timepreparation;
+	public int getDelayTime() {
+		return delayTime;
 	}
-	public void setTimePreparation(int timepreparation) {
-		this.timepreparation = timepreparation;
+	public void setDelayTime(int delayTime) {
+		this.delayTime = delayTime;
 	}
-	public List<Photo> getGallery() {
-		return gallery;
+	public List<Variant> getVariants() {
+		return variants;
 	}
-	public void setGallery(List<Photo> gallery) {
-		this.gallery = gallery;
+	public void setVariants(List<Variant> variants) {
+		this.variants = variants;
 	}
 	public boolean isStatus() {
 		return status;
@@ -100,8 +95,10 @@ public class ProductRequest {
 	}
 	@Override
 	public String toString() {
-		return "Product [id=" + id + ", idstore=" + idstore + ", name=" + name + ", tag=" + tag + ", details=" + details
-				+ ", createDate=" + createDate + ", userCreate=" + userCreate + ", type=" + type + ", timePreparation="
-				+ timepreparation + ", gallery=" + gallery + ", status=" + status + "]";
+		return "ProductRequest [id=" + id + ", idstore=" + idstore + ", name=" + name + ", tag=" + tag + ", details="
+				+ details + ", createDate=" + createDate + ", userCreate=" + userCreate + ", type=" + type
+				+ ", delayTime=" + delayTime + ", variants=" + variants + ", status=" + status + "]";
 	}
+	
+	
 }

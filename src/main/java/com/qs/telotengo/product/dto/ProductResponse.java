@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.qs.telotengo.product.dao.Photo;
 import com.qs.telotengo.product.dao.Product;
+import com.qs.telotengo.product.dao.Variant;
 
 public class ProductResponse {
 	
@@ -15,8 +16,8 @@ public class ProductResponse {
 	private Date createDate;
 	private String userCreate;
 	private String type;
-	private int timePreparation;
-	private List<Photo> gallery;
+	private int delayTime;
+	private List<Variant> variants;
 	private boolean status;
 	public String getId() {
 		return id;
@@ -66,17 +67,17 @@ public class ProductResponse {
 	public void setType(String type) {
 		this.type = type;
 	}
-	public int getTimePreparation() {
-		return timePreparation;
+	public int getDelayTime() {
+		return delayTime;
 	}
-	public void setTimePreparation(int timePreparation) {
-		this.timePreparation = timePreparation;
+	public void setDelayTime(int delayTime) {
+		this.delayTime = delayTime;
 	}
-	public List<Photo> getGallery() {
-		return gallery;
+	public List<Variant> getVariants() {
+		return variants;
 	}
-	public void setGallery(List<Photo> gallery) {
-		this.gallery = gallery;
+	public void setVariants(List<Variant> variants) {
+		this.variants = variants;
 	}
 	public boolean isStatus() {
 		return status;
@@ -96,15 +97,16 @@ public class ProductResponse {
 		this.createDate = product.getCreateDate();
 		this.userCreate = product.getUserCreate();
 		this.type = product.getType();
-		this.timePreparation = product.gettimepreparation();
-		this.gallery = product.getGallery();
+		this.delayTime = product.getDelayTime();
+		this.variants = product.getVariants();
 		this.status = product.isStatus();
 	}
-	
 	@Override
 	public String toString() {
-		return "Product [id=" + id + ", idstore=" + idstore + ", name=" + name + ", tag=" + tag + ", details=" + details
-				+ ", createDate=" + createDate + ", userCreate=" + userCreate + ", type=" + type + ", timePreparation="
-				+ timePreparation + ", gallery=" + gallery + ", status=" + status + "]";
+		return "ProductResponse [id=" + id + ", idstore=" + idstore + ", name=" + name + ", tag=" + tag + ", details="
+				+ details + ", createDate=" + createDate + ", userCreate=" + userCreate + ", type=" + type
+				+ ", delayTime=" + delayTime + ", variants=" + variants + ", status=" + status + "]";
 	}
+	
+
 }

@@ -10,7 +10,6 @@ import javax.validation.constraints.NotNull;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-
 @Document
 public class Product implements Serializable {
 
@@ -32,11 +31,29 @@ public class Product implements Serializable {
 	@NotNull
 	private String type;
 	@NotNull
-	@Min(value=0, message="No puede ser menor que 0")
-	private int timepreparation;
-	private List<Photo> gallery;
+	private int delayTime;
+	private List<Variant> variants;
 	private boolean status;
 	
+	
+	public Product() {}
+	
+	public Product(String id, @NotNull String idstore, @NotNull String name, @NotNull String tag,
+			@NotNull String details, @NotNull Date createDate, @NotNull String userCreate, @NotNull String type,
+			@NotNull int delayTime, List<Variant> variants, boolean status) {
+		super();
+		this.id = id;
+		this.idstore = idstore;
+		this.name = name;
+		this.tag = tag;
+		this.details = details;
+		this.createDate = createDate;
+		this.userCreate = userCreate;
+		this.type = type;
+		this.delayTime = delayTime;
+		this.variants = variants;
+		this.status = status;
+	}
 	public String getId() {
 		return id;
 	}
@@ -46,8 +63,8 @@ public class Product implements Serializable {
 	public String getIdstore() {
 		return idstore;
 	}
-	public void setIdstore(String idStore) {
-		this.idstore = idStore;
+	public void setIdstore(String idstore) {
+		this.idstore = idstore;
 	}
 	public String getName() {
 		return name;
@@ -85,17 +102,17 @@ public class Product implements Serializable {
 	public void setType(String type) {
 		this.type = type;
 	}
-	public int gettimepreparation() {
-		return timepreparation;
+	public int getDelayTime() {
+		return delayTime;
 	}
-	public void settimepreparation(int  timepreparation) {
-		this.timepreparation = timepreparation;
+	public void setDelayTime(int delayTime) {
+		this.delayTime = delayTime;
 	}
-	public List<Photo> getGallery() {
-		return gallery;
+	public List<Variant> getVariants() {
+		return variants;
 	}
-	public void setGallery(List<Photo> gallery) {
-		this.gallery = gallery;
+	public void setVariants(List<Variant> variants) {
+		this.variants = variants;
 	}
 	public boolean isStatus() {
 		return status;
@@ -103,30 +120,16 @@ public class Product implements Serializable {
 	public void setStatus(boolean status) {
 		this.status = status;
 	}
-	public Product() {
-	}
-	public Product(String id, @NotNull String idstore, @NotNull String name, @NotNull String tag,
-			@NotNull String details, @NotNull Date createDate, @NotNull String userCreate, @NotNull String type,
-			@NotNull int timepreparation, List<Photo> gallery, boolean status) {
-		super();
-		this.id = id;
-		this.idstore = idstore;
-		this.name = name;
-		this.tag = tag;
-		this.details = details;
-		this.createDate = createDate;
-		this.userCreate = userCreate;
-		this.type = type;
-		this.timepreparation = timepreparation;
-		this.gallery = gallery;
-		this.status = status;
+	public static long getSerialversionuid() {
+		return serialVersionUID;
 	}
 	@Override
 	public String toString() {
 		return "Product [id=" + id + ", idstore=" + idstore + ", name=" + name + ", tag=" + tag + ", details=" + details
-				+ ", createDate=" + createDate + ", userCreate=" + userCreate + ", type=" + type + ", timepreparation="
-				+ timepreparation + ", gallery=" + gallery + ", status=" + status + "]";
+				+ ", createDate=" + createDate + ", userCreate=" + userCreate + ", type=" + type + ", delayTime="
+				+ delayTime + ", variants=" + variants + ", status=" + status + "]";
 	}
 
 	
+
 }

@@ -1,6 +1,5 @@
 package com.qs.telotengo.product.service.impl;
 
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -20,11 +19,15 @@ import org.springframework.stereotype.Service;
 
 import com.qs.telotengo.product.dao.Photo;
 import com.qs.telotengo.product.dao.Product;
+import com.qs.telotengo.product.dao.Size;
+import com.qs.telotengo.product.dao.Variant;
 import com.qs.telotengo.product.dao.repository.ProductRepository;
 import com.qs.telotengo.product.dto.PhotoRequest;
 import com.qs.telotengo.product.dto.PhotoResponse;
 import com.qs.telotengo.product.dto.ProductRequest;
 import com.qs.telotengo.product.dto.ProductResponse;
+import com.qs.telotengo.product.dto.VariantRequest;
+import com.qs.telotengo.product.dto.VariantResponse;
 import com.qs.telotengo.product.dto.util.ProductType;
 import com.qs.telotengo.product.exception.ValidationExceptions;
 import com.qs.telotengo.product.service.ProductService;
@@ -33,7 +36,7 @@ import com.qs.telotengo.product.util.Constantes;
 @Service
 public class ProductServiceImpl implements ProductService {
 
-	private static final Logger LOGGER = Logger.getLogger(ProductServiceImpl.class.getName());
+	private final Logger LOGGER = Logger.getLogger(ProductServiceImpl.class.getName());
 
 	@Autowired
 	private ProductRepository dao;
@@ -43,47 +46,49 @@ public class ProductServiceImpl implements ProductService {
 
 	@Override
 	public ProductResponse saveProduct(ProductRequest productRequest) throws ValidationExceptions {
-		if (!isValidType(productRequest.getType())) {
-			throw new ValidationExceptions(
-					Constantes.ERROR_TYPE_PRODUCT_NO_VALID_CODE, 
-					Constantes.ERROR_TYPE_PRODUCT_NO_VALID_TEXT +" :" +productRequest.getType().toUpperCase(),
-					HttpStatus.OK);
-		}
+		isValidType(productRequest.getType());
 
 		Optional<Product> productExist = dao.findByIdAndStatusIsTrue(productRequest.getId());
+
 		Product product;
 		// guardando
 		if (Objects.isNull(productRequest.getId()) && !productExist.isPresent()) {
+
 			productRequest.setStatus(true);
-		    Date date = new Date();
-			productRequest.setCreateDate(date);
-			
-			if (!Objects.isNull(productRequest.getGallery())) {
-				productRequest.setGallery(setIdToPhotos(productRequest.getGallery()));
-				productRequest.getGallery().get(0).setPrimary(true);
-			}
+			productRequest.setCreateDate(new Date());
+			productRequest.setId(new ObjectId().toString());
+			productRequest.setVariants(null);
+
 			product = dao.save(buildEntity(productRequest));
 			LOGGER.info("save product: " + product);
-		} else {
+		} else if (productExist.isPresent()) {
 			// Update
-			productExist = dao.findByIdAndStatusIsTrue(productRequest.getId());
-			if (productExist.isPresent()) {
-				productRequest.setGallery(productExist.get().getGallery());
-				productRequest.setIdstore(productExist.get().getIdstore());
-				productRequest.setCreateDate(productExist.get().getCreateDate());
-				productRequest.setUserCreate(productExist.get().getUserCreate());
-				productRequest.setStatus(true);
-				LOGGER.info("update product " + productExist.get());
-				product = dao.save(buildEntity(productRequest));
-			} else {
-				throw new ValidationExceptions(
-						Constantes.ERROR_NOT_UPDATE_PRODUCT_NOT_EXIST_CODE,
-						Constantes.ERROR_NOT_UPDATE_PRODUCT_NOT_EXIST_TEXT
-								+ productRequest.getId(),
-						HttpStatus.OK);
-			}
+
+			productRequest.setVariants(productExist.get().getVariants());
+			productRequest.setIdstore(productExist.get().getIdstore());
+			productRequest.setCreateDate(productExist.get().getCreateDate());
+			productRequest.setUserCreate(productExist.get().getUserCreate());
+			productRequest.setStatus(true);
+			product = dao.save(buildEntity(productRequest));
+			LOGGER.info("update product " + productRequest);
+		} else {
+			LOGGER.info(Constantes.ERROR_NOT_UPDATE_PRODUCT_NOT_EXIST_TEXT);
+			throw new ValidationExceptions(Constantes.ERROR_NOT_UPDATE_PRODUCT_NOT_EXIST_CODE,
+					Constantes.ERROR_NOT_UPDATE_PRODUCT_NOT_EXIST_TEXT, HttpStatus.OK);
 		}
 		return buildResponse(product);
+	}
+
+	private boolean variantIdConsistency(List<String> listaRequestVariantIdExist) {
+		Optional<List<Product>> listVariantsExist = dao.findByVariantsIdIn(listaRequestVariantIdExist);
+		if (listVariantsExist.get().size() != 1) {
+			return false;
+		}
+		if (listVariantsExist.get().get(0).getVariants().size() != listaRequestVariantIdExist.size()) {
+			return false;
+		}
+
+		return true;
 	}
 
 	@Override
@@ -91,39 +96,34 @@ public class ProductServiceImpl implements ProductService {
 		Optional<Product> product = dao.findByIdAndStatusIsTrue(id);
 		LOGGER.info("Message: getProduct: " + product.toString());
 
-		ProductResponse uResponse = buildResponse(dao.findByIdAndStatusIsTrue(id).orElseThrow(
-				() -> new ValidationExceptions(
-						Constantes.ERROR_PRODUCT_NOT_EXIST_CODE,
-						Constantes.ERROR_PRODUCT_NOT_EXIST_TEXT + id,
-						HttpStatus.OK)));
+		ProductResponse uResponse = buildResponse(dao.findByIdAndStatusIsTrue(id)
+				.orElseThrow(() -> new ValidationExceptions(Constantes.ERROR_PRODUCT_NOT_EXIST_CODE,
+						Constantes.ERROR_PRODUCT_NOT_EXIST_TEXT + id, HttpStatus.OK)));
 		return uResponse;
 	}
 
 	// busqueda producto
 	@Override
-	public List<ProductResponse> getAllProductCoincidencia(String coincidencia,int page, int numberOfItem) throws ValidationExceptions {
-		PageRequest pageable = PageRequest.of(page,numberOfItem);
-		List<Product> productList =  dao
-				.findByNameContainingIgnoreCaseOrTagContainingIgnoreCaseAndStatusIsTrueAndGalleryStatusIsTrue(
-						coincidencia, coincidencia,pageable).getContent();
+	public List<ProductResponse> getAllProductCoincidencia(String coincidencia, int page, int numberOfItem)
+			throws ValidationExceptions {
+		PageRequest pageable = PageRequest.of(page, numberOfItem);
+		List<Product> productList = dao.findByNameContainingIgnoreCaseOrTagContainingIgnoreCaseAndStatusIsTrue(
+				coincidencia, coincidencia, pageable).getContent();
 		if (IterableUtils.isEmpty(productList)) {
-			throw new ValidationExceptions(
-					Constantes.ERROR_EMPTY_PRODUCT_LIST_CODE,
-					Constantes.ERROR_EMPTY_PRODUCT_LIST_TEXT,
-					HttpStatus.OK);
+			throw new ValidationExceptions(Constantes.ERROR_EMPTY_PRODUCT_LIST_CODE,
+					Constantes.ERROR_EMPTY_PRODUCT_LIST_TEXT, HttpStatus.OK);
 		}
 		return buildResponseList(productList);
 	}
 
 	@Override
-	public List<ProductResponse> getAllProductOfStore(String idStore,int page, int numberOfItem) throws ValidationExceptions {
-		PageRequest pageable = PageRequest.of(page,numberOfItem);
+	public List<ProductResponse> getAllProductOfStore(String idStore, int page, int numberOfItem)
+			throws ValidationExceptions {
+		PageRequest pageable = PageRequest.of(page, numberOfItem);
 		List<Product> productList = dao.findByIdstoreAndStatusIsTrue(idStore, pageable).getContent();
 		if (IterableUtils.isEmpty(productList)) {
-			throw new ValidationExceptions(
-					Constantes.ERROR_EMPTY_PRODUCT_LIST_CODE,
-					Constantes.ERROR_EMPTY_PRODUCT_LIST_TEXT,
-					HttpStatus.OK);
+			throw new ValidationExceptions(Constantes.ERROR_EMPTY_PRODUCT_LIST_CODE,
+					Constantes.ERROR_EMPTY_PRODUCT_LIST_TEXT, HttpStatus.OK);
 		}
 		return buildResponseList(productList);
 	}
@@ -132,80 +132,133 @@ public class ProductServiceImpl implements ProductService {
 	public ProductResponse deleteProduct(String id) throws ValidationExceptions {
 		Optional<Product> productDel = dao.findByIdAndStatusIsTrue(id);
 		if (!productDel.isPresent()) {
-			throw new ValidationExceptions(
-					Constantes.ERROR_PRODUCT_NOT_EXIST_CODE,
-					Constantes.ERROR_PRODUCT_NOT_EXIST_TEXT + id,
-					HttpStatus.OK);
+			throw new ValidationExceptions(Constantes.ERROR_PRODUCT_NOT_EXIST_CODE,
+					Constantes.ERROR_PRODUCT_NOT_EXIST_TEXT + id, HttpStatus.OK);
 		}
 		Product product = productDel.get();
 		product.setStatus(false);
 		return buildResponse(dao.save(product));
 	}
 	// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-	// |||||||||||||||||||||GALLERY METHOD||||||||||||||||||||||||||
+	// |||||||||||||||||||||GALLERY VARIANTS||||||||||||||||||||||||
 	// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 	@Override
-	public List<Photo> getAllPhoto(String idProduct) throws ValidationExceptions {
-		Optional<Product> uResponse = dao.findGalleryByIdAndStatusIsTrue(idProduct);
-		if (!uResponse.isPresent()) {
-			throw new ValidationExceptions(
-					Constantes.ERROR_PRODUCT_NOT_EXIST_CODE,
-					Constantes.ERROR_PRODUCT_NOT_EXIST_TEXT +" :" + idProduct,
-					HttpStatus.OK);
+	public List<Variant> saveVariant(List<Variant> variantList, String idProduct) throws ValidationExceptions {
+		Optional<Product> product = dao.findByIdAndStatusIsTrue(idProduct);
+
+		if (product.isPresent()) {
+
+			List<String> listaRequestVariantIdExist = (List<String>) variantList.stream()
+					.filter(s -> !Objects.isNull(s.getId()))
+					.map(Variant::getId)
+					.collect(Collectors.toList());
+
+			//Optional<List<Product>> listProductWithVariants = dao.findByVariantsIdIn(listaRequestVariantIdExist);
+
+			
+			if (listaRequestVariantIdExist.size() > 0 && !variantIdConsistency(listaRequestVariantIdExist)) {
+				LOGGER.info("Error Add Variants: " + Constantes.ERROR_INCONSISTENCY_VARIANT_TEXT  +" - "+variantList);
+				throw new ValidationExceptions(Constantes.ERROR_INCONSISTENCY_VARIANT_CODE,
+						Constantes.ERROR_INCONSISTENCY_VARIANT_TEXT + ": " + Arrays.toString(variantList.toArray()), HttpStatus.BAD_REQUEST);
+			}
+			variantList = setIdToVariantWithoutId(variantList);
+			// set id to gallery
+			for (int index = 0; index < variantList.size(); index++) {
+				variantList.get(index).setGallery(setIdToPhotos(variantList.get(index).getGallery()));
+				variantList.get(index).getGallery().get(0).setPrimary(true);
+				variantList.get(index).setSizes(setIdToSizes(variantList.get(index).getSizes()));
+			}
+
+			product.get().setVariants(variantList);
+
+			dao.save(product.get());
+
+			LOGGER.info("Add this Variants: " + variantList);
+			// buildPhotosListResponse
+			return variantList;
 		} else {
-			if (!Objects.isNull(uResponse.get().getGallery())) {
-				return uResponse.get().getGallery();
+			throw new ValidationExceptions(Constantes.ERROR_NOT_ADD_PHOTOS_PRODUCT_NOT_EXIST_CODE,
+					Constantes.ERROR_NOT_ADD_PHOTOS_PRODUCT_NOT_EXIST_TEXT + " :" + idProduct, HttpStatus.OK);
+		}
+	}
+
+	@Override
+	public List<VariantResponse> getAllVariants(String idProduct) throws ValidationExceptions {
+		Optional<Product> product = dao.findByIdAndStatusIsTrue(idProduct);
+
+		if (product.isPresent() && !Objects.isNull(product.get().getVariants())) {
+			LOGGER.info("Get list Variants: " + product.get().getVariants().toString());
+			return  buildVariantsListResponse(product.get().getVariants());
+		} else if (product.isPresent() && Objects.isNull(product.get().getVariants())) {
+			LOGGER.info("ERROR Get list Variants: " + Constantes.ERROR_EMPTY_LIST_VARIANT_TEXT);
+			throw new ValidationExceptions(Constantes.ERROR_EMPTY_LIST_VARIANT_CODE,
+					Constantes.ERROR_EMPTY_LIST_VARIANT_TEXT + " :" + idProduct, HttpStatus.OK);
+		}else {
+			LOGGER.info("ERROR Get list Variants: " + Constantes.ERROR_PRODUCT_NOT_EXIST_TEXT);
+			throw new ValidationExceptions(Constantes.ERROR_PRODUCT_NOT_EXIST_CODE,
+					Constantes.ERROR_PRODUCT_NOT_EXIST_TEXT + " :" + idProduct, HttpStatus.OK);			
+		}
+	}
+
+	// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+	// |||||||||||||||||||||GALLERY METHOD||||||||||||||||||||||||||
+	// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+	@Override
+	public List<PhotoResponse> getAllPhotoByVariant(String idVariant) throws ValidationExceptions {
+		Optional<Product> uResponse = dao.findByVariantsId(idVariant);
+		if (!uResponse.isPresent()) {
+			throw new ValidationExceptions(Constantes.ERROR_VARIANT_NOT_EXIST_CODE,
+					Constantes.ERROR_VARIANT_NOT_EXIST_TEXT + " :" + idVariant, HttpStatus.OK);
+		} else {
+			if (!Objects.isNull(uResponse.get().getVariants().get(0).getGallery())) {
+				return buildPhotosListResponse(uResponse.get().getVariants().get(0).getGallery());
 			} else {
-				throw new ValidationExceptions(
-						Constantes.ERROR_EMPTY_PHOTOS_LIST_CODE, 
-						Constantes.ERROR_EMPTY_PHOTOS_LIST_TEXT,
-						HttpStatus.OK);
+				throw new ValidationExceptions(Constantes.ERROR_EMPTY_PHOTOS_LIST_CODE,
+						Constantes.ERROR_EMPTY_PHOTOS_LIST_TEXT, HttpStatus.OK);
 			}
 		}
 	}
 
 	@Override
-	public List<PhotoResponse> savePhotos(List<PhotoRequest> photoList, String id) throws ValidationExceptions {
+	public List<PhotoResponse> savePhotosinVariant(List<PhotoRequest> photoList, String idProduct, String idVariant)
+			throws ValidationExceptions {
 		// Photo nuevaPhoto = buildEntityGallery(photoRequest);
-		Optional<Product> product = dao.findByIdAndStatusIsTrue(id);
+		Optional<Product> product = dao.findByIdAndVariantsIdAndStatusIsTrue(idProduct, idVariant);
 
 		if (product.isPresent()) {
-		LOGGER.info("Add Photos: " + product.get().getGallery());
-		//buildPhotosListResponse
-		return  buildPhotosListResponse(dao.save(AddPhotoInUser(product, buildPhotosListEntity(photoList)).get()).getGallery());
+			LOGGER.info("Add Photos: " + photoList);
+			// buildPhotosListResponse
+			return buildPhotosListResponse(dao.save(AddPhotoInVariant(product, buildPhotosListEntity(photoList)).get())
+					.getVariants().get(0).getGallery());
 		} else {
-			throw new ValidationExceptions(
-					Constantes.ERROR_NOT_ADD_PHOTOS_PRODUCT_NOT_EXIST_CODE, 
-					Constantes.ERROR_NOT_ADD_PHOTOS_PRODUCT_NOT_EXIST_TEXT +" :"+ id,
-					HttpStatus.OK);
+			throw new ValidationExceptions(Constantes.ERROR_NOT_ADD_PHOTOS_PRODUCT_NOT_EXIST_CODE,
+					Constantes.ERROR_NOT_ADD_PHOTOS_PRODUCT_NOT_EXIST_TEXT + " :" + idProduct, HttpStatus.OK);
 		}
 	}
 
 	@Override
 	public boolean deletePhoto(String idPhoto) throws ValidationExceptions {
-		Optional<Product> product = dao.findGalleryByGalleryIdAndGalleryStatusIsTrue(idPhoto);
+		Optional<Product> product = dao.findByVariantsGalleryId(idPhoto);
 		boolean elimino = false;
 		if (product.isPresent()) {
-			elimino = product.get().getGallery().removeIf(l -> l.getId().equals(idPhoto));
+			elimino = product.get().getVariants().get(0).getGallery().removeIf(l -> l.getId().equals(idPhoto));
 		}
 		if (elimino) {
 			dao.save(product.get());
 			LOGGER.info("Eliminando foto id: " + idPhoto);
 			return elimino;
 		} else {
-			throw new ValidationExceptions(
-					Constantes.ERROR_NOT_DELETE_PHOTOS_PRODUCT_NOT_EXIST_CODE, 
-					Constantes.ERROR_NOT_DELETE_PHOTOS_PRODUCT_NOT_EXIST_TEXT +" :"+ idPhoto,
-					HttpStatus.OK);
+			throw new ValidationExceptions(Constantes.ERROR_NOT_DELETE_PHOTOS_PRODUCT_NOT_EXIST_CODE,
+					Constantes.ERROR_NOT_DELETE_PHOTOS_PRODUCT_NOT_EXIST_TEXT + " :" + idPhoto, HttpStatus.OK);
 		}
 	}
 
 	@Override
 	public PhotoResponse setToPhotoPrimary(String idPhoto) throws ValidationExceptions {
-		Optional<Product> productExist = dao.findGalleryByGalleryIdAndGalleryStatusIsTrue(idPhoto);
+		Optional<Product> productExist = dao.findByVariantsGalleryId(idPhoto);
 		if (!Objects.isNull(productExist)) {
-			productExist.get().getGallery().stream().forEach(l -> {
+			productExist.get().getVariants().get(0).getGallery().stream().forEach(l -> {
 				if (l.getId().equalsIgnoreCase(idPhoto)) {
 					l.setPrimary(true);
 				} else {
@@ -213,42 +266,75 @@ public class ProductServiceImpl implements ProductService {
 				}
 			});
 			dao.save(productExist.get());
-			Photo gallery = productExist.get().getGallery().stream().filter(s -> s.getId().equalsIgnoreCase(idPhoto))
-					.collect(Collectors.toList()).get(0);
+			Photo gallery = productExist.get().getVariants().get(0).getGallery().stream()
+					.filter(s -> s.getId().equalsIgnoreCase(idPhoto)).collect(Collectors.toList()).get(0);
 			LOGGER.info("Se cambio esta foto a principal: " + gallery);
 			return buildResponseGallery(gallery);
 		} else {
-			throw new ValidationExceptions(
-					Constantes.ERROR_NOT_UPDATE_PHOTOS_PRODUCT_NOT_EXIST_CODE, 
-					Constantes.ERROR_NOT_UPDATE_PHOTOS_PRODUCT_NOT_EXIST_TEXT +" :"+ idPhoto,
-					HttpStatus.OK);
+			throw new ValidationExceptions(Constantes.ERROR_NOT_UPDATE_PHOTOS_PRODUCT_NOT_EXIST_CODE,
+					Constantes.ERROR_NOT_UPDATE_PHOTOS_PRODUCT_NOT_EXIST_TEXT + " :" + idPhoto, HttpStatus.OK);
 		}
+	}
+
+	private List<Size> setIdToSizes(List<Size> lista) {
+		for (int contador = 0; contador < lista.size(); contador++) {
+			if (Objects.isNull(lista.get(contador).getId()) || lista.get(contador).getId().isEmpty()) {
+				lista.get(contador).setId(new ObjectId().toString());
+			}
+		}
+		return lista;
 	}
 
 	private List<Photo> setIdToPhotos(List<Photo> lista) {
 		for (int contador = 0; contador < lista.size(); contador++) {
-			lista.get(contador).setId(new ObjectId().toString());
-			lista.get(contador).setStatus(true);
+			if (Objects.isNull(lista.get(contador).getId()) || lista.get(contador).getId().isEmpty()) {
+				lista.get(contador).setId(new ObjectId().toString());
+				lista.get(contador).setStatus(true);
+			}
 		}
 		return lista;
 	}
-	public boolean isValidType(String tipo) throws ValidationExceptions {
-		return !Arrays.stream(ProductType.values()).filter(e -> e.equals(tipo.toUpperCase())).findFirst().isPresent();
+
+	public void isValidType(String tipo) throws ValidationExceptions {
+		// boolean respuesta = Arrays.stream(ProductType.values()).filter(e ->
+		// e.equals(tipo.toUpperCase())).findFirst().isPresent();
+		boolean result = false;
+		for (ProductType type : ProductType.values()) {
+			if (type.toString().equalsIgnoreCase(tipo)) {
+				result = true;
+				break;
+			}
+		}
+
+		if (!result) {
+
+			throw new ValidationExceptions(Constantes.ERROR_TYPE_PRODUCT_NO_VALID_CODE,
+					Constantes.ERROR_TYPE_PRODUCT_NO_VALID_TEXT + " :" + tipo.toUpperCase(), HttpStatus.BAD_REQUEST);
+		}
 	}
 
-	private Optional<Product> AddPhotoInUser(Optional<Product> product, List<Photo> listPhoto) {
-		List<Photo> myGallery = new ArrayList<Photo>();
-		if (!Objects.isNull(product.get().getGallery())) {
-			myGallery = product.get().getGallery();
+	/*
+	 * 
+	 * Debe enviar un solo variante
+	 */
+	private Optional<Product> AddPhotoInVariant(Optional<Product> product, List<Photo> listPhoto)
+			throws ValidationExceptions {
+		if (product.get().getVariants().size() > 1) {
+			throw new ValidationExceptions(Constantes.ERROR_UNSPECIFIED_VARIANT_CODE,
+					Constantes.ERROR_UNSPECIFIED_VARIANT_TEXT, HttpStatus.OK);
 		}
-		
+		List<Photo> myGallery = new ArrayList<Photo>();
+		if (!Objects.isNull(product.get().getVariants().get(0).getGallery())) {
+			myGallery = product.get().getVariants().get(0).getGallery();
+		}
+
 		myGallery.addAll(setIdToPhotos(listPhoto));
 
-		if (Objects.isNull(product.get().getGallery())) {
+		if (Objects.isNull(product.get().getVariants().get(0).getGallery())) {
 			myGallery.get(0).setPrimary(true);
 		}
-		
-		product.get().setGallery(myGallery);
+
+		product.get().getVariants().get(0).setGallery(myGallery);
 		return product;
 	}
 
@@ -298,6 +384,16 @@ public class ProductServiceImpl implements ProductService {
 		return null;
 	}
 
+	public Variant buildEntityVariant(VariantRequest variantRequest) {
+		try {
+			return mapper.map(variantRequest, Variant.class);
+		} catch (RuntimeException e) {
+
+			LOGGER.info("BulidEntityVariant: " + e.getMessage());
+		}
+		return null;
+	}
+
 	public PhotoResponse buildResponseGallery(Photo gallery) {
 		try {
 			return mapper.map(gallery, PhotoResponse.class);
@@ -306,8 +402,7 @@ public class ProductServiceImpl implements ProductService {
 		}
 		return null;
 	}
-	
-	
+
 	public List<PhotoResponse> buildPhotosListResponse(Iterable<Photo> photoIterable) {
 		List<Photo> PhotoRS = (List<Photo>) photoIterable;
 
@@ -334,6 +429,38 @@ public class ProductServiceImpl implements ProductService {
 		return asDto;
 	}
 
+	public List<Variant> buildVariantListEntity(Iterable<VariantRequest> VariantRequestIterable) {
+		List<VariantRequest> PhotoRS = (List<VariantRequest>) VariantRequestIterable;
 
+		List<Variant> asDto = PhotoRS.stream().map(new Function<VariantRequest, Variant>() {
+			@Override
+			public Variant apply(VariantRequest s) {
+
+				return new Variant(s);
+			}
+		}).collect(Collectors.toList());
+		return asDto;
+	}
+	
+	public List<VariantResponse> buildVariantsListResponse(Iterable<Variant> variantIterable) {
+		List<Variant> PhotoRS = (List<Variant>) variantIterable;
+
+		List<VariantResponse> asDto = PhotoRS.stream().map(new Function<Variant, VariantResponse>() {
+			@Override
+			public VariantResponse apply(Variant s) {
+
+				return new VariantResponse(s);
+			}
+		}).collect(Collectors.toList());
+		return asDto;
+	}
+
+	private List<Variant> setIdToVariantWithoutId(List<Variant> lista) {
+		for (int contador = 0; contador < lista.size(); contador++) {
+			if (Objects.isNull(lista.get(contador).getId()) || lista.get(contador).getId().isEmpty())
+				lista.get(contador).setId(new ObjectId().toString());
+		}
+		return lista;
+	}
 
 }
