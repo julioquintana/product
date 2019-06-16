@@ -16,7 +16,8 @@ COPY src /app/src
 RUN mvn package
 
 FROM openjdk:alpine
-ENV PORT 7789
+EXPOSE 7789
+
 RUN mkdir -p /app
 COPY --from=build /app/target/*.jar /app
 WORKDIR /app
