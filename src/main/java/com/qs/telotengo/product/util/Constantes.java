@@ -1,6 +1,7 @@
 package com.qs.telotengo.product.util;
 
 public final class Constantes {
+
 	public static final String ERROR_PRODUCT_NOT_EXIST_CODE = "4000";
 	public static final String ERROR_PRODUCT_NOT_EXIST_TEXT = "Product does not exist";
 
@@ -46,9 +47,7 @@ public final class Constantes {
 	public static final String ERROR_EMPTY_LIST_VARIANT_CODE = "4014";
 	public static final String ERROR_EMPTY_LIST_VARIANT_TEXT = "empty list of variants";
 
-
-	
-	
-	
-	
+	public static final String ERROR_STATUS_PRODUCT_NO_VALID_CODE = "4015";
+	public static final String ERROR_STATUS_PRODUCT_NO_VALID_TEXT = "Status of product not valid";
+		
 }

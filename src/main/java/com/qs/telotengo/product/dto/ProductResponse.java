@@ -12,13 +12,14 @@ public class ProductResponse {
 	private String idstore;
 	private String name;
 	private String tag;
+	private String category;
 	private String details;
 	private Date createDate;
 	private String userCreate;
 	private String type;
 	private int delayTime;
 	private List<Variant> variants;
-	private boolean status;
+	private String status;
 	public String getId() {
 		return id;
 	}
@@ -36,6 +37,12 @@ public class ProductResponse {
 	}
 	public void setName(String name) {
 		this.name = name;
+	}
+	public String getCategory() {
+		return category;
+	}
+	public void setCategory(String category) {
+		this.category = category;
 	}
 	public String getTag() {
 		return tag;
@@ -79,10 +86,11 @@ public class ProductResponse {
 	public void setVariants(List<Variant> variants) {
 		this.variants = variants;
 	}
-	public boolean isStatus() {
+	
+	public String getStatus() {
 		return status;
 	}
-	public void setStatus(boolean status) {
+	public void setStatus(String status) {
 		this.status = status;
 	}
 	public ProductResponse() {
@@ -92,6 +100,7 @@ public class ProductResponse {
 		this.id =  product.getId();
 		this.idstore = product.getIdstore();
 		this.name = product.getName();
+		this.category = product.getCategory();
 		this.tag = product.getTag();
 		this.details = product.getDetails();
 		this.createDate = product.getCreateDate();
@@ -99,11 +108,11 @@ public class ProductResponse {
 		this.type = product.getType();
 		this.delayTime = product.getDelayTime();
 		this.variants = product.getVariants();
-		this.status = product.isStatus();
+		this.status = product.getStatus();
 	}
 	@Override
 	public String toString() {
-		return "ProductResponse [id=" + id + ", idstore=" + idstore + ", name=" + name + ", tag=" + tag + ", details="
+		return "ProductResponse [id=" + id + ", idstore=" + idstore + ", name=" + name + ", category=" + category+ ", tag=" + tag + ", details="
 				+ details + ", createDate=" + createDate + ", userCreate=" + userCreate + ", type=" + type
 				+ ", delayTime=" + delayTime + ", variants=" + variants + ", status=" + status + "]";
 	}

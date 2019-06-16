@@ -17,6 +17,8 @@ public class ProductRequest {
 
 	private String tag;
 	@NotNull
+	private String category;
+	@NotNull
 	private String details;
 	
 	private Date createDate;
@@ -26,7 +28,7 @@ public class ProductRequest {
 	private String type;
 	private int delayTime;
 	private List<Variant> variants;
-	private boolean status;
+	private String status;
 	public String getId() {
 		return id;
 	}
@@ -44,6 +46,13 @@ public class ProductRequest {
 	}
 	public void setName(String name) {
 		this.name = name;
+	}
+	
+	public String getCategory() {
+		return category;
+	}
+	public void setCategory(String category) {
+		this.category = category;
 	}
 	public String getTag() {
 		return tag;
@@ -87,15 +96,15 @@ public class ProductRequest {
 	public void setVariants(List<Variant> variants) {
 		this.variants = variants;
 	}
-	public boolean isStatus() {
+	public String getStatus() {
 		return status;
 	}
-	public void setStatus(boolean status) {
+	public void setStatus(String status) {
 		this.status = status;
 	}
 	@Override
 	public String toString() {
-		return "ProductRequest [id=" + id + ", idstore=" + idstore + ", name=" + name + ", tag=" + tag + ", details="
+		return "ProductRequest [id=" + id + ", idstore=" + idstore + ", name=" + name + ", category=" + category+ ", tag=" + tag + ", details="
 				+ details + ", createDate=" + createDate + ", userCreate=" + userCreate + ", type=" + type
 				+ ", delayTime=" + delayTime + ", variants=" + variants + ", status=" + status + "]";
 	}

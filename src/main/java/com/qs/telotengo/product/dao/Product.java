@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
-import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.data.annotation.Id;
@@ -21,6 +20,8 @@ public class Product implements Serializable {
 	@NotNull
 	private String name;
 	@NotNull
+	private String category;
+	@NotNull
 	private String tag;
 	@NotNull
 	private String details;
@@ -33,18 +34,19 @@ public class Product implements Serializable {
 	@NotNull
 	private int delayTime;
 	private List<Variant> variants;
-	private boolean status;
+	private String status;
 	
 	
 	public Product() {}
 	
-	public Product(String id, @NotNull String idstore, @NotNull String name, @NotNull String tag,
+	public Product(String id, @NotNull String idstore, @NotNull String name, @NotNull String category,@NotNull String tag,
 			@NotNull String details, @NotNull Date createDate, @NotNull String userCreate, @NotNull String type,
-			@NotNull int delayTime, List<Variant> variants, boolean status) {
+			@NotNull int delayTime, List<Variant> variants, String status) {
 		super();
 		this.id = id;
 		this.idstore = idstore;
 		this.name = name;
+		this.category = category;
 		this.tag = tag;
 		this.details = details;
 		this.createDate = createDate;
@@ -72,6 +74,15 @@ public class Product implements Serializable {
 	public void setName(String name) {
 		this.name = name;
 	}
+	
+	public String getCategory() {
+		return category;
+	}
+
+	public void setCategory(String category) {
+		this.category = category;
+	}
+
 	public String getTag() {
 		return tag;
 	}
@@ -114,21 +125,22 @@ public class Product implements Serializable {
 	public void setVariants(List<Variant> variants) {
 		this.variants = variants;
 	}
-	public boolean isStatus() {
+
+	public String getStatus() {
 		return status;
 	}
-	public void setStatus(boolean status) {
+
+	public void setStatus(String status) {
 		this.status = status;
 	}
-	public static long getSerialversionuid() {
-		return serialVersionUID;
-	}
+
 	@Override
 	public String toString() {
-		return "Product [id=" + id + ", idstore=" + idstore + ", name=" + name + ", tag=" + tag + ", details=" + details
-				+ ", createDate=" + createDate + ", userCreate=" + userCreate + ", type=" + type + ", delayTime="
-				+ delayTime + ", variants=" + variants + ", status=" + status + "]";
+		return "Product [id=" + id + ", idstore=" + idstore + ", name=" + name + ", category=" + category + ", tag="
+				+ tag + ", details=" + details + ", createDate=" + createDate + ", userCreate=" + userCreate + ", type="
+				+ type + ", delayTime=" + delayTime + ", variants=" + variants + ", status=" + status + "]";
 	}
+	
 
 	
 

@@ -2,6 +2,7 @@ package com.qs.telotengo.product.controller;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import javax.validation.Valid;
@@ -18,13 +19,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.qs.telotengo.product.dao.Photo;
 import com.qs.telotengo.product.dao.Variant;
 import com.qs.telotengo.product.dto.PhotoRequest;
 import com.qs.telotengo.product.dto.PhotoResponse;
 import com.qs.telotengo.product.dto.ProductRequest;
 import com.qs.telotengo.product.dto.ProductResponse;
 import com.qs.telotengo.product.dto.VariantResponse;
+import com.qs.telotengo.product.dto.util.StatusType;
 import com.qs.telotengo.product.exception.ValidationExceptions;
 import com.qs.telotengo.product.service.ProductService;
 import com.qs.telotengo.product.util.Constantes;
@@ -32,6 +33,9 @@ import com.qs.telotengo.product.util.Constantes;
 @RestController
 @RequestMapping("/v1/product-service/")
 public class ProductController {
+	
+	private final Logger LOGGER = Logger.getLogger(ProductController.class.getName());
+
 
 	@Autowired
 	private ProductService productService;
@@ -43,23 +47,25 @@ public class ProductController {
 		return new ResponseEntity<ProductResponse>(productService.saveProduct(productRequest), HttpStatus.OK);
 	}
 
-	@GetMapping("/details/{id}")
-	public HttpEntity<ProductResponse> getProduct(@PathVariable("id") String id) throws ValidationExceptions {
-		return new ResponseEntity<ProductResponse>(productService.getProduct(id), HttpStatus.OK);
+	@GetMapping("/details/{status}/{id}")
+	public HttpEntity<ProductResponse> getProduct(@PathVariable("status") String status,@PathVariable("id") String id) throws ValidationExceptions {
+		status = fixStatusRequest(status);
+		return new ResponseEntity<ProductResponse>(productService.getProductByIdAndStatus(id, status), HttpStatus.OK);
 	}
 
-	@GetMapping("/list/{coincidencia}/{page}/{nroitem}")
-	public HttpEntity<List<ProductResponse>> getAllProductCoincidencia(
+	@GetMapping("/list/{status}/{coincidencia}/{page}/{nroitem}")
+	public HttpEntity<List<ProductResponse>> getAllProductCoincidencia(@PathVariable("status") String status,
 			@PathVariable("coincidencia") String coincidencia, @PathVariable("page") int page, @PathVariable("nroitem") int nroitem ) throws ValidationExceptions {
-		return new ResponseEntity<List<ProductResponse>>(productService.getAllProductCoincidencia(coincidencia, page,nroitem),
+		status = fixStatusRequest(status);
+		return new ResponseEntity<List<ProductResponse>>(productService.getAllProductCoincidencia(coincidencia,status, page,nroitem),
 				HttpStatus.OK);
 	}
 
-	@GetMapping("/list/store/{idStore}/{page}/{nroitem}")
-	public HttpEntity<List<ProductResponse>> getAllProductOfStore(@PathVariable("idStore") String idStore
-			, @PathVariable("page") int page, @PathVariable("nroitem") int nroitem )
-			throws ValidationExceptions {
-		return new ResponseEntity<List<ProductResponse>>(productService.getAllProductOfStore(idStore, page,nroitem),
+	@GetMapping("/list/store/{status}/{idStore}/{page}/{nroitem}")
+	public HttpEntity<List<ProductResponse>> getAllProductOfStore(@PathVariable("status") String status, @PathVariable("idStore") String idStore
+			, @PathVariable("page") int page, @PathVariable("nroitem") int nroitem )throws ValidationExceptions {
+		status = fixStatusRequest(status);
+		return new ResponseEntity<List<ProductResponse>>(productService.getAllProductOfStore(idStore, status, page,nroitem),
 				HttpStatus.OK);
 	}
 
@@ -70,13 +76,13 @@ public class ProductController {
 
 	// EndPoint de Gallery
 
-	// todas las Gallery de un usuario
-	@GetMapping("/list/gallery/variant/{id}")
-	public HttpEntity<List<PhotoResponse>> getAllPhotoByVariant(@PathVariable("id") String idVariant) throws ValidationExceptions {
+	// todas las Gallery de una variante
+	@GetMapping("/list/gallery/variant/{idVariant}")
+	public HttpEntity<List<PhotoResponse>> getAllPhotoByVariant(@PathVariable("idVariant") String idVariant) throws ValidationExceptions {
 		return new ResponseEntity<List<PhotoResponse>>(productService.getAllPhotoByVariant(idVariant), HttpStatus.OK);
 	}
 
-	// guardar Gallery de un usuario
+	// guardar Gallery de una variante de un producto
 	@PostMapping("/save/gallery/{id}/{idVariant}")
 	public HttpEntity<List<PhotoResponse>> saveGallery(@Valid @RequestBody List<PhotoRequest> photoRequest,
 			@PathVariable("id") String id,@PathVariable("idVariant") String idVariant ) throws ValidationExceptions {
@@ -126,6 +132,18 @@ public class ProductController {
 						Constantes.ERROR_IMAGE_NAME_NULL_TEXT,
 						HttpStatus.BAD_REQUEST);
 			}
+		}
+	}
+	private String fixStatusRequest(String status) throws ValidationExceptions {
+		try {
+			status = status.toUpperCase();
+			return StatusType.valueOf(status).toString();
+		}catch(Exception e){
+			LOGGER.info(Constantes.ERROR_STATUS_PRODUCT_NO_VALID_CODE);
+			throw new ValidationExceptions(
+					Constantes.ERROR_STATUS_PRODUCT_NO_VALID_CODE,
+					Constantes.ERROR_STATUS_PRODUCT_NO_VALID_TEXT,
+					HttpStatus.BAD_REQUEST);
 		}
 	}
 

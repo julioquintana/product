@@ -13,13 +13,15 @@ import com.qs.telotengo.product.dao.Product;
 
 @Repository
 public interface ProductRepository extends MongoRepository<Product, String> {
-	//Todos los productos que coincidMethod has to have one of the following return types!an de un store	
-	Page<Product> findByNameContainingIgnoreCaseOrTagContainingIgnoreCaseAndStatusIsTrue(String name, String tag, Pageable page);
+	//Todos los productos que coincidMethod has to have one of the following return types!an de un store
+	
+	Page<Product> findByStatusAndNameContainingIgnoreCaseOrStatusAndTagContainingIgnoreCase(String status, String name, String status2, String tag, Pageable page);
 	//Todos los productos de un store
-	Page<Product> findByIdstoreAndStatusIsTrue(String idStore, Pageable page);
+	Page<Product> findByIdstoreAndStatus(String idStore,String status, Pageable page);
 	//buscar producto por id
-	Optional<Product> findByIdAndStatusIsTrue(String id);
-	Optional<Product> findByIdAndVariantsIdAndStatusIsTrue(String id, String idVariant);
+	Optional<Product> findByIdAndStatus(String id, String status);
+	Optional<Product> findByIdAndStatusNot(String id, String Status);
+	Optional<Product> findByIdAndStatusAndVariantsId(String id, String status, String idVariant);
 
 	//Variants method
 	Optional<Product> findByVariantsId(String idVariant);
