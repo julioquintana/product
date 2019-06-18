@@ -1,11 +1,20 @@
-pipeline {
-    agent { dockerfile true }
-    stages {
-        stage('Test') {
-            steps {
-                sh 'node --version'
-                sh 'svn --version'
-            }
+stage('Unit tests') {
+        git branch: "${env.BRANCH_NAME}", credentialsId: 'cc_oms', url: "${gitrepo}"
+        checkout scm
+        container('maven') {
+          sh "mvn test -Djacoco.skip " +
+            "-Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true " +
+            "-Dmaven.wagon.http.ssl.ignore.validity.dates=true " + "-e "
         }
-    }
-}
+      }
+
+ stage('Build project artifact') {
+        git branch: "${env.BRANCH_NAME}", credentialsId: 'cc_oms', url: "${gitrepo}"
+        checkout scm
+        container('maven') {
+          sh "mvn package -DskipTests -Dcobertura.skip" +
+            "-Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true " +
+            "-Dmaven.wagon.http.ssl.ignore.validity.dates=true " + "-e "
+        }
+      }
+
