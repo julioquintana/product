@@ -24,8 +24,8 @@ switch(env.BRANCH_NAME) {
 
 def image = "${img}:${image_id}"
 
-{
-    node('shippingcalculator') {
+
+    node('telotengo') {
     gitlabCommitStatus(name: 'jenkins') {
       stage('Get project dependencies') {
         git branch: "${env.BRANCH_NAME}", credentialsId: 'cc_oms', url: "${gitrepo}"
@@ -107,4 +107,3 @@ def image = "${img}:${image_id}"
       }
     }
   }
-}
