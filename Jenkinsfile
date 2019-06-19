@@ -1,6 +1,5 @@
 def app_name = "Product"
-def img = "cencoreg:5000/txd/eom/shippingcalculatorv1"
-def img_sed = 'cencoreg:5000\\/txd\\/eom\\/shippingcalculatorv1'
+def img = "Product-Service"
 def gitrepo = 'https://github.com/julioquintana/product.git'
 def build_id = "${env.BUILD_ID}"
 def deploy_list = ["master"]
