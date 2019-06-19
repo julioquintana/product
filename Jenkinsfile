@@ -1,109 +1,161 @@
-def app_name = "Product"
-def img = "Product-Service"
-def gitrepo = 'https://github.com/julioquintana/product.git'
-def build_id = "${env.BUILD_ID}"
-def deploy_list = ["master"]
+pipeline {
+    agent { label 'docker' } // Require a build executor with docker
 
+    options {
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+    }
 
-switch(env.BRANCH_NAME) {
-  case 'master':
-    nspace = 'txd'
-    k_cloud = 'k8scl01'
-    k_folder = 'prod'
-    image_id= "${build_id}"
-    secret_name = 'sm-prod-database-secrets'
-  break
-  default:
-    nspace = 'txd'
-    k_cloud = 'k8sqacl01'
-    k_folder = 'dev'
-    image_id = "dev-${build_id}"
-    secret_name = 'sm-dev-database-secrets'
-  break
+    stages {
+        stage('Build') {
+            steps {
+                createPipelineTriggers()
+                createVersion()
+
+                mvn "clean install -DskipTests -Parq-wildfly-swarm -Drevision=${versionName}"
+                archiveArtifacts '**/target/*.jar'
+            }
+        }
+
+        stage('Tests') {
+            parallel {
+                stage('Unit Test') {
+                    steps {
+                        mvn "test -Drevision=${versionName}"
+                    }
+                }
+                stage('Integration Test') {
+                    when { expression { return isNightly() } }
+                    steps {
+                        mvn "verify -DskipUnitTests -Parq-wildfly-swarm -Drevision=${versionName}"
+                    }
+                }
+            }
+        }
+
+        stage('Statical Code Analysis') {
+            steps {
+                analyzeWithSonarQubeAndWaitForQualityGoal()
+            }
+        }
+
+        stage('Deploy') {
+            when { expression { return currentBuild.currentResult == 'SUCCESS' } }
+
+            steps {
+                script {
+
+                    // Comment in and out some things so this deploys branch 11-x for this demo.
+                    // In real world projects its good practice to deploy only develop and master branches
+                    if (env.BRANCH_NAME == "master") {
+                        //deployToKubernetes(versionName, 'kubeconfig-prod', getServiceIp('kubeconfig-prod'))
+                    } else { //if (env.BRANCH_NAME == 'develop') {
+                        deployToKubernetes(versionName, 'kubeconfig-staging', getServiceIp('kubeconfig-staging'))
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // Archive Unit and integration test results, if any
+            junit allowEmptyResults: true,
+                    testResults: '**/target/surefire-reports/TEST-*.xml, **/target/failsafe-reports/*.xml'
+            mailIfStatusChanged env.EMAIL_RECIPIENTS
+        }
+    }
 }
 
-def image = "${img}:${image_id}"
-
-
-    node {
-    gitlabCommitStatus(name: 'jenkins') {
-      stage('Get project dependencies') {
-        git branch: "${env.BRANCH_NAME}", credentialsId: 'cc_oms', url: "${gitrepo}"
-        checkout scm
-        container('maven') {
-          sh "mvn install -DskipTests -Dcobertura.skip " +
-            "-Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true " +
-            "-Dmaven.wagon.http.ssl.ignore.validity.dates=true " + "-e "
+void createPipelineTriggers() {
+    script {
+        def triggers = []
+        if (env.BRANCH_NAME == 'master') {
+            // Run a nightly only for master
+            triggers = [cron('H H(0-3) * * 1-5')]
         }
-      }
-
-      stage('Unit tests') {
-        git branch: "${env.BRANCH_NAME}", credentialsId: 'cc_oms', url: "${gitrepo}"
-        checkout scm
-        container('maven') {
-          sh "mvn test -Djacoco.skip " +
-            "-Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true " +
-            "-Dmaven.wagon.http.ssl.ignore.validity.dates=true " + "-e "
-        }
-      }
-
-      stage('Coverage Analysis') {
-        git branch: "${env.BRANCH_NAME}", credentialsId: 'cc_oms', url: "${gitrepo}"
-        checkout scm
-        container('maven') {
-          sh "mvn test " +
-            "-Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true " +
-            "-Dmaven.wagon.http.ssl.ignore.validity.dates=true " + "-e "
-        }
-      }
-      stage('Integration tests') {
-        git branch: "${env.BRANCH_NAME}", credentialsId: 'cc_oms', url: "${gitrepo}"
-        checkout scm
-        container('maven') {
-          withCredentials([file(credentialsId: "${secret_name}", variable: 'DATABASE')]) {
-            sh """
-                set +x
-                export `cat $DATABASE | grep DATABASE_URL`
-                export `cat $DATABASE | grep DATABASE_USER`
-                export `cat $DATABASE | grep DATABASE_PASSWD`
-             """ +
-             "mvn failsafe:integration-test " +
-              "-Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true " +
-              "-Dmaven.wagon.http.ssl.ignore.validity.dates=true " + "-e "
-          }
-        }
-      }
-      stage('Build project artifact') {
-        git branch: "${env.BRANCH_NAME}", credentialsId: 'cc_oms', url: "${gitrepo}"
-        checkout scm
-        container('maven') {
-          sh "mvn package -DskipTests -Dcobertura.skip" +
-            "-Dmaven.wagon.http.ssl.insecure=true -Dmaven.wagon.http.ssl.allowall=true " +
-            "-Dmaven.wagon.http.ssl.ignore.validity.dates=true " + "-e "
-        }
-      }
-
-      stage('Build and push Docker image') {
-        if(deploy_list.contains(env.BRANCH_NAME)){
-          withCredentials([usernamePassword(credentialsId: 'nexus-registry', passwordVariable: 'DOCKER_PASSWD', usernameVariable: 'DOCKER_USER')]) {
-            container('docker') {
-              sh "docker build --no-cache -t ${image} -f docker/Dockerfile ."
-              sh "echo ${DOCKER_PASSWD} | docker login -u ${DOCKER_USER} --password-stdin cencoreg:5000"
-              sh "docker push ${image} && docker rmi ${image}"
-            }
-          }
-        }
-      }
-
-      stage('Deploy to Kubernetes') {
-        if(deploy_list.contains(env.BRANCH_NAME)){
-          container('kubectl') {
-            sh "sed -i -r 's/(${img_sed}:)[0-9a-z]*/\\1${image_id}/' k8s/${k_folder}/deployment.yaml"
-            // sh "sed -ie 's/AWS_ACCESS_KEY_ID_VALUE/${AWS_ACCESS_KEY_ID}/g' k8s/${k_folder}/deployment.yaml"
-            // sh "sed -ie 's/AWS_SECRET_ACCESS_KEY_VALUE/${AWS_SECRET_ACCESS_KEY}/g' k8s/${k_folder}/deployment.yaml"
-            sh "kubectl -n ${nspace} apply -f k8s/${k_folder}"
-          }
-        }
-      }
+        properties([
+                pipelineTriggers(triggers)
+        ])
     }
-  }
+}
+
+String createVersion() {
+    // E.g. "201708140933"
+    String versionName = "${new Date().format('yyyyMMddHHmm')}"
+
+    if (env.BRANCH_NAME != "master") {
+        versionName += '-SNAPSHOT'
+    }
+    echo "Building version ${versionName} on branch ${env.BRANCH_NAME}"
+    currentBuild.description = versionName
+    env.versionName = versionName
+}
+
+void deployToKubernetes(String versionName, String credentialsId, String hostname) {
+
+    String dockerRegistry = 'us.gcr.io/ces-demo-instances'
+    String imageName = "${dockerRegistry}/kitchensink:${versionName}"
+
+    docker.withRegistry("https://${dockerRegistry}", 'docker-us.gcr.io/ces-demo-instances') {
+        docker.build(imageName, '.').push()
+    }
+
+    withCredentials([file(credentialsId: credentialsId, variable: 'kubeconfig')]) {
+
+        withEnv(["IMAGE_NAME=${imageName}"]) {
+
+            kubernetesDeploy(
+                    credentialsType: 'KubeConfig',
+                    kubeConfig: [path: kubeconfig],
+                    configs: 'k8s/deployment.yaml',
+                    enableConfigSubstitution: true
+            )
+        }
+    }
+
+    timeout(time: 3, unit: 'MINUTES') {
+        waitUntil {
+            sleep(time: 10, unit: 'SECONDS')
+            isVersionDeployed(versionName, "http://${hostname}/rest/version")
+        }
+    }
+}
+
+boolean isVersionDeployed(String expectedVersion, String versionEndpoint) {
+    def deployedVersion = sh(returnStdout: true, script: "curl -s ${versionEndpoint}").trim()
+    echo "Deployed version returned by ${versionEndpoint}: ${deployedVersion}. Waiting for ${expectedVersion}."
+    return expectedVersion == deployedVersion
+}
+
+void analyzeWithSonarQubeAndWaitForQualityGoal() {
+    withSonarQubeEnv('sonarcloud.io') {
+        mvn "${SONAR_MAVEN_GOAL} -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_AUTH_TOKEN} " +
+                // Here, we could define e.g. sonar.organization, needed for sonarcloud.io
+                "${SONAR_EXTRA_PROPS} " +
+                // Addionally needed when using the branch plugin (e.g. on sonarcloud.io)
+                "-Dsonar.branch.name=${BRANCH_NAME} -Dsonar.branch.target=master"
+    }
+    timeout(time: 10, unit: 'MINUTES') { // Normally, this takes only some ms. sonarcloud.io might take minutes, though :-(
+        def qg = waitForQualityGate()
+        if (qg.status != 'OK') {
+            echo "Pipeline unstable due to quality gate failure: ${qg.status}"
+            currentBuild.result = 'UNSTABLE'
+        }
+    }
+}
+
+String getServiceIp(String kubeconfigCredential) {
+
+    withCredentials([file(credentialsId: kubeconfigCredential, variable: 'kubeconfig')]) {
+
+        String serviceName = 'kitchensink' // See k8s/service.yaml
+
+        // Using kubectl is so much easier than plain REST via curl (parsing info from kubeconfig is cumbersome!)
+        return sh(returnStdout: true, script:
+                "docker run -v ${kubeconfig}:/root/.kube/config lachlanevenson/k8s-kubectl:v1.9.5" +
+                        " get svc ${serviceName}" +
+                        ' |  awk \'{print $4}\'  | sed -n 2p'
+                ).trim()
+    }
+}

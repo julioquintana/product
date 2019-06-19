@@ -1,0 +1,11 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: product
+spec:
+  selector:
+    app: producxt
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: LoadBalancer

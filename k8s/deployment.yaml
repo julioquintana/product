@@ -1,0 +1,41 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: product
+  name: product
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: product
+  template:
+    metadata:
+      labels:
+        app: product
+      annotations:
+        kubernetes.io/change-cause: $IMAGE_NAME
+    spec:
+      containers:
+      - image: $IMAGE_NAME
+        name: product
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 250m
+          limits:
+            memory: 512Mi
+            cpu: 500m
+        readinessProbe:
+          httpGet:
+            path: /rest/version
+            port: 8080
+          initialDelaySeconds: 15
+        livenessProbe:
+          httpGet:
+            path: /rest/version
+            port: 8080
+          initialDelaySeconds: 30
+        env:
+        - name: JAVA_OPTS
+          value: -Xmx512M
