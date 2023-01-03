@@ -1,4 +1,3 @@
-#FROM registry.gitlab.com/cencosud-ds/post-venta/operacion-tienda/backend-ean-jda:build as build
 FROM maven:alpine as build
 
 RUN mkdir -p /app/src
